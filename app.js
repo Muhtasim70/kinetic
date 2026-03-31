@@ -16,6 +16,7 @@ const state = {
   referralPatient: null,
   referralClinic: null,
   darkMode: false,
+  historySharingOptIn: true, // opt-in to patient history sharing by default
 };
 
 const clinics = {
@@ -78,7 +79,7 @@ const networkClinics = [
 
 // --- HELPERS ---
 function getClinic() { return clinics[state.currentClinic]; }
-function canReceiveHistory() { return getClinic().rep >= 200; }
+function canReceiveHistory() { return state.historySharingOptIn && getClinic().rep >= 200; }
 function canRequestDetailed() { return getClinic().rep >= 1000; }
 function isAnalyticsUnlocked() { return getClinic().rep >= 4000; }
 
@@ -434,7 +435,35 @@ function renderFoundPatient() {
   const canReceive = canReceiveHistory();
 
   let actionContent;
-  if (!canReceive) {
+  if (!state.historySharingOptIn) {
+    // Opted out — locked regardless of tier
+    actionContent = `
+      <div class="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+        <div class="flex items-start gap-3">
+          <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          <div>
+            <p class="text-sm font-medium text-red-800">History Sharing Disabled</p>
+            <p class="text-sm text-red-700 mt-1">Your clinic has opted out of patient history sharing. You cannot request or receive patient history while this setting is off.</p>
+            <button onclick="navigate('settings')" class="mt-3 text-sm font-medium text-red-700 underline underline-offset-2 hover:text-red-900 transition-colors flex items-center gap-1">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Re-enable in Settings
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4 flex items-center gap-3">
+        <button disabled class="bg-gray-200 text-gray-500 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-not-allowed flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+          Request History
+        </button>
+        <button onclick="state.patientFlowStep='nohistory';state.lookupResult='found';renderPage();" class="bg-navy hover:bg-navy-light text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Continue to Intake
+        </button>
+      </div>
+    `;
+  } else if (!canReceive) {
+    // Opted in but tier too low
     actionContent = `
       <div class="mt-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
         <div class="flex items-start gap-3">
@@ -1570,6 +1599,34 @@ function renderSettings() {
       </div>
     </div>
 
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border ${state.historySharingOptIn ? 'border-gray-100 dark:border-gray-700' : 'border-red-200 dark:border-red-800'} p-6 mb-6">
+      <h3 class="font-semibold text-navy dark:text-white mb-4">Patient History Sharing</h3>
+      <p class="text-sm text-gray-500 mb-5">Control whether your clinic participates in the Kinetic patient history sharing network. Opting out will prevent you from requesting or receiving any patient history, regardless of your reputation tier.</p>
+      <div class="space-y-5 max-w-lg">
+        <div class="flex items-center justify-between p-4 rounded-xl ${state.historySharingOptIn ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-lg flex items-center justify-center ${state.historySharingOptIn ? 'bg-green-100 dark:bg-green-800/30' : 'bg-red-100 dark:bg-red-800/30'}">
+              ${state.historySharingOptIn
+                ? '<svg class="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>'
+                : '<svg class="w-5 h-5 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>'
+              }
+            </div>
+            <div>
+              <span class="text-sm font-semibold ${state.historySharingOptIn ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}">${state.historySharingOptIn ? 'Opted In' : 'Opted Out'}</span>
+              <p class="text-xs ${state.historySharingOptIn ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'} mt-0.5">${state.historySharingOptIn ? 'Your clinic can request and receive patient history' : 'History sharing is disabled — requests are blocked'}</p>
+            </div>
+          </div>
+          <div class="relative">
+            <div class="w-12 h-7 rounded-full cursor-pointer transition-colors duration-300 ${state.historySharingOptIn ? 'bg-green-500' : 'bg-red-400'}" onclick="toggleHistorySharing()">
+              <div class="w-5 h-5 bg-white rounded-full shadow-md absolute top-1 transition-transform duration-300 ${state.historySharingOptIn ? 'left-6' : 'left-1'}"></div>
+            </div>
+          </div>
+        </div>
+
+        ${!state.historySharingOptIn ? '<div class="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-700"><svg class="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg><div><p class="text-xs font-medium text-amber-800 dark:text-amber-300">Impact of opting out:</p><ul class="text-xs text-amber-700 dark:text-amber-400 mt-1 space-y-0.5 list-disc list-inside"><li>You cannot request patient history from other clinics</li><li>You will not earn reputation points from history sharing</li><li>Your existing reputation score will be preserved</li><li>You can re-enable sharing at any time</li></ul></div></div>' : ''}
+      </div>
+    </div>
+
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
       <h3 class="font-semibold text-navy dark:text-white mb-4">Appearance</h3>
       <div class="space-y-4 max-w-lg">
@@ -1628,6 +1685,17 @@ function renderSettings() {
       </div>
     </div>
   `;
+}
+
+// --- HISTORY SHARING OPT-IN/OUT ---
+function toggleHistorySharing() {
+  state.historySharingOptIn = !state.historySharingOptIn;
+  if (!state.historySharingOptIn) {
+    showToast('Patient history sharing disabled. You will not be able to request or receive patient history.', 'warning', 5000);
+  } else {
+    showToast('Patient history sharing re-enabled.', 'success');
+  }
+  renderPage();
 }
 
 // --- DARK MODE ---
