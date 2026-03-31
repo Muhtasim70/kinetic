@@ -15,6 +15,7 @@ const state = {
   referralStep: null, // null, 'select-patient', 'select-clinic', 'confirm', 'sent'
   referralPatient: null,
   referralClinic: null,
+  darkMode: false,
 };
 
 const clinics = {
@@ -1569,8 +1570,33 @@ function renderSettings() {
       </div>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-      <h3 class="font-semibold text-navy mb-4">Notification Preferences</h3>
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 mb-6">
+      <h3 class="font-semibold text-navy dark:text-white mb-4">Appearance</h3>
+      <div class="space-y-4 max-w-lg">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center ${state.darkMode ? 'bg-indigo-500/20' : 'bg-gray-100'}">
+              ${state.darkMode
+                ? '<svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>'
+                : '<svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>'
+              }
+            </div>
+            <div>
+              <span class="text-sm font-medium text-gray-900 dark:text-white">Night Mode</span>
+              <p class="text-xs text-gray-500 dark:text-gray-400">${state.darkMode ? 'Dark theme active' : 'Switch to a darker interface'}</p>
+            </div>
+          </div>
+          <div class="relative">
+            <div class="w-12 h-7 rounded-full cursor-pointer transition-colors duration-300 ${state.darkMode ? 'bg-teal' : 'bg-gray-200'}" onclick="toggleDarkMode()">
+              <div class="w-5 h-5 bg-white rounded-full shadow-md absolute top-1 transition-transform duration-300 ${state.darkMode ? 'left-6' : 'left-1'}"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+      <h3 class="font-semibold text-navy dark:text-white mb-4">Notification Preferences</h3>
       <div class="space-y-4 max-w-lg">
         <label class="flex items-center justify-between">
           <span class="text-sm text-gray-700">Email notifications for history requests</span>
@@ -1602,6 +1628,13 @@ function renderSettings() {
       </div>
     </div>
   `;
+}
+
+// --- DARK MODE ---
+function toggleDarkMode() {
+  state.darkMode = !state.darkMode;
+  document.documentElement.classList.toggle('dark', state.darkMode);
+  renderPage();
 }
 
 // --- INIT ---
